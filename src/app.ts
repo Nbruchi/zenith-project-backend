@@ -11,7 +11,14 @@ import slotRequestRoutes from "./routes/slotRequest.routes"
 dotenv.config();
 const app = express();
 
-app.use(cors());
+// Configure CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.use('/api/v1/auth', authRoutes);
@@ -19,6 +26,16 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/parking-slots', parkingRoutes);
 app.use('/api/v1/slot-requests', slotRequestRoutes);
+
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err : {}
+  });
+});
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
