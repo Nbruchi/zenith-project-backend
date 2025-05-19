@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
 // add prisma to the NodeJS global type
-// TODO : downgraded @types/node to 15.14.1 to avoid error on NodeJS.Global
 interface CustomNodeJsGlobal extends Global {
   prisma: PrismaClient;
 }
@@ -15,17 +14,20 @@ if (process.env.NODE_ENV === 'development') {
   global.prisma = prisma;
 }
 
-
-
 export const logAction = async (userId: string | null, action: string) => {
-  await prisma.log.create({
-    data: {
-      userId,
-      action,
-      createdAt: new Date(),
-    },
-  });
+  try {
+    // If userId is 'system', don't include it in the log
+    const logData = userId === 'system' 
+      ? { action, createdAt: new Date() }
+      : { userId, action, createdAt: new Date() };
+
+    await prisma.log.create({
+      data: logData,
+    });
+  } catch (error) {
+    // Log the error but don't throw it to prevent breaking the main flow
+    console.error('Failed to log action:', error);
+  }
 };
 
-
-export default prisma;
+export default prisma; 

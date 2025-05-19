@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
 import nodemailer, { Transporter } from 'nodemailer';
 import { logAction } from 'prisma/prisma-client';
+import { PARKING_RATE_PER_30MIN } from '../dtos/parking.dto';
 
 config();
 
@@ -118,17 +119,33 @@ const sendPasswordResetEmail = async (email: string, names: string, passwordRese
   }
 };
 
-const sendSlotApprovalEmail = async (
-  to: string,
+// Add this function to calculate parking duration and cost
+function calculateParkingCost(startTime: Date, endTime: Date): { duration: string; cost: number } {
+  const diffInMinutes = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+  const halfHourBlocks = Math.ceil(diffInMinutes / 30);
+  const cost = halfHourBlocks * PARKING_RATE_PER_30MIN;
+  
+  const hours = Math.floor(diffInMinutes / 60);
+  const minutes = diffInMinutes % 60;
+  const duration = `${hours}h ${minutes}m`;
+  
+  return { duration, cost };
+}
+
+export const sendSlotApprovalEmail = async (
+  email: string,
   slotNumber: string,
   plateNumber: string,
-  approvedAt: Date
+  startTime: Date,
+  endTime: Date
 ) => {
+  const { duration, cost } = calculateParkingCost(startTime, endTime);
+  
   try {
     await transporter.sendMail({
-      from: `"Vehicle Parking System" <${process.env.EMAIL_USER}>`,
-      to,
-      subject: 'Parking Slot Approval',
+      from: `"Parking System" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Parking Slot Request Approved',
       html: `
         <!DOCTYPE html>
         <html lang="en">
@@ -138,31 +155,40 @@ const sendSlotApprovalEmail = async (
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            h1 { color: #4200FE; }
-            p { margin: 10px 0; }
+            h2 { color: #4200FE; }
+            .details { margin: 20px 0; }
+            .amount { font-size: 1.2em; font-weight: bold; color: #4200FE; }
           </style>
         </head>
         <body>
           <div class="container">
-            <h1>Parking Slot Approved</h1>
-            <p>Your parking slot request has been approved.</p>
-            <p><strong>Slot Number:</strong> ${slotNumber}</p>
-            <p><strong>Vehicle Plate Number:</strong> ${plateNumber}</p>
-            <p><strong>Approved At:</strong> ${approvedAt.toLocaleString()}</p>
-            <p>Best regards,<br>Vehicle Parking System Team</p>
+            <h2>Parking Slot Request Approved</h2>
+            <div class="details">
+              <p>Your parking request has been approved with the following details:</p>
+              <ul>
+                <li>Slot Number: ${slotNumber}</li>
+                <li>Vehicle Plate: ${plateNumber}</li>
+                <li>Start Time: ${startTime.toLocaleTimeString()}</li>
+                <li>End Time: ${endTime.toLocaleTimeString()}</li>
+                <li>Duration: ${duration}</li>
+                <li class="amount">Amount to Pay: ${cost} RWF</li>
+              </ul>
+            </div>
+            <p>Please ensure to pay the parking fee at the reception desk.</p>
+            <p>Best regards,<br>Parking System Team</p>
           </div>
         </body>
         </html>
       `,
     });
 
-    await logAction('system', `Sent slot approval email to ${to} for slot ${slotNumber}`);
+    await logAction('system', `Sent slot approval email to ${email}`);
     return { message: 'Email sent successfully', status: true };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    await logAction('system', `Failed to send slot approval email to ${to}: ${errorMessage}`);
+    await logAction('system', `Failed to send slot approval email to ${email}: ${errorMessage}`);
     return { message: 'Unable to send email', status: false };
   }
 };
 
-export { sendAccountVerificationEmail, sendPasswordResetEmail, sendSlotApprovalEmail };
+export { sendAccountVerificationEmail, sendPasswordResetEmail };

@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import prisma from '../prisma/prisma-client';
+import { Prisma, VehicleType } from '@prisma/client';
+import prisma, { logAction } from '../prisma/prisma-client';
 import ServerResponse from '../utils/ServerResponse';
 import { VehicleDto, UpdateVehicleDto } from '../dtos/vehicle.dto';
-import { logAction } from '../prisma/prisma-client';
-import { Prisma, VehicleType } from '@prisma/client';
 
 export class VehicleController {
   static async createVehicle(req: Request, res: Response) {
@@ -53,8 +52,7 @@ export class VehicleController {
     return ServerResponse.success(res, null, 'Vehicle deleted');
   }
 
- 
- static async getVehicles(req: Request, res: Response) {
+  static async getVehicles(req: Request, res: Response) {
     const userId = (req as any).user.id;
     const isAdmin = (req as any).user.role === 'ADMIN';
     
@@ -84,11 +82,30 @@ export class VehicleController {
           skip: (pageNum - 1) * limitNum,
           take: limitNum,
           include: {
-            User: {  // Changed from 'user' to 'User' to match Prisma schema
+            User: {
               select: {
                 id: true,
                 name: true,
                 email: true
+              }
+            },
+            slotRequests: {
+              where: {
+                status: 'APPROVED',
+                startTime: {
+                  lte: new Date()
+                },
+                endTime: {
+                  gte: new Date()
+                }
+              },
+              select: {
+                slot: {
+                  select: {
+                    id: true,
+                    slotNumber: true
+                  }
+                }
               }
             }
           }
@@ -98,8 +115,15 @@ export class VehicleController {
       
       await logAction(userId, 'Vehicles listed');
       
+      const vehiclesWithParkingStatus = vehicles.map(vehicle => ({
+        ...vehicle,
+        isParked: vehicle.slotRequests.length > 0,
+        parkingSlotId: vehicle.slotRequests[0]?.slot?.id,
+        parkingSlotNumber: vehicle.slotRequests[0]?.slot?.slotNumber
+      }));
+      
       return ServerResponse.success(res, {
-        items: vehicles,
+        items: vehiclesWithParkingStatus,
         total,
         page: pageNum,
         limit: limitNum,
@@ -108,10 +132,9 @@ export class VehicleController {
     } catch (error) {
       return ServerResponse.error(res, 'Failed to fetch vehicles');
     }
-}
+  }
 
-
- static async getVehicleById(req: Request, res: Response) {
+  static async getVehicleById(req: Request, res: Response) {
     const { id } = req.params;
     const userId = (req as any).user.id;
     const isAdmin = (req as any).user.role === 'ADMIN';
@@ -140,5 +163,5 @@ export class VehicleController {
     
     await logAction(userId, 'Vehicle viewed');
     return ServerResponse.success(res, vehicle);
-}
+  }
 }

@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import prisma from '../prisma/prisma-client';
+import prisma,{ logAction } from '../prisma/prisma-client';
 import ServerResponse from '../utils/ServerResponse';
 import { RegisterDto, LoginDto } from '../dtos/auth.dto';
-import { logAction } from '../prisma/prisma-client';
 
 export class AuthController {
   static async register(req: Request, res: Response) {

@@ -1,5 +1,6 @@
 import { IsDateString, IsEnum, IsNotEmpty, IsNumberString, IsOptional, IsString, IsUUID, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, registerDecorator, IsNumber } from 'class-validator';
 import { Location, Size, SlotStatus, VehicleType } from '@prisma/client';
+import { ValidateIf } from 'class-validator';
 
 @ValidatorConstraint({ name: 'DateRangeValidator', async: false })
 class DateRangeValidator implements ValidatorConstraintInterface {
@@ -60,11 +61,8 @@ export class GetSlotRequestsQueryDto {
   status?: string;
 }
 
+export const PARKING_RATE_PER_30MIN = 500; // 500 RWF per 30 minutes
 
-
-// ... (keep all existing imports and code)
-
-// Add this new DTO for creating a single slot (note: SlotDto already exists in your code)
 export class CreateSlotDto {
   @IsString()
   @IsNotEmpty()
@@ -87,7 +85,6 @@ export class CreateSlotDto {
   status?: SlotStatus = SlotStatus.AVAILABLE; // Default to AVAILABLE
 }
 
-// Keep existing BulkSlotDto (already present in your code, included here for clarity)
 export class BulkSlotDto {
   @IsNumber()
   @IsNotEmpty()
@@ -172,7 +169,6 @@ export class GetSlotsQueryDto {
   status?: SlotStatus;
 }
 
-
 export class SlotRequestDto {
   @IsUUID()
   @IsNotEmpty()
@@ -186,15 +182,15 @@ export class SlotRequestDto {
   @IsOptional()
   preferredLocation?: Location;
 
-  @IsDateString()
+  @IsString()
   @IsOptional()
-  @ValidateDateRange()
-  startDate?: string;
+  @ValidateIf((o) => o.startTime !== undefined && o.startTime !== '')
+  startTime?: string;
 
-  @IsDateString()
+  @IsString()
   @IsOptional()
-  @ValidateDateRange()
-  endDate?: string;
+  @ValidateIf((o) => o.endTime !== undefined && o.endTime !== '')
+  endTime?: string;
 
   @IsString()
   @IsOptional()
@@ -233,7 +229,7 @@ export class ApproveSlotRequestDto {
 
 export class RejectSlotRequestDto {
   @IsString()
-  @IsNotEmpty()
-  reason!: string;
+  @IsNotEmpty({ message: 'Rejection reason is required' })
+  rejectionReason!: string;
 }
 

@@ -41,7 +41,7 @@ export class SlotRequestController {
         where.OR = [
           { preferredLocation: { contains: search, mode: 'insensitive' } },
           { vehicle: { plateNumber: { contains: search, mode: 'insensitive' } } },
-          { user: { name: { contains: search, mode: 'insensitive' } } },
+          { User: { name: { contains: search, mode: 'insensitive' } } },
         ];
       }
       if (status) {
@@ -59,7 +59,7 @@ export class SlotRequestController {
           include: {
             vehicle: { select: { id: true, plateNumber: true, vehicleType: true, size: true } },
             slot: { select: { id: true, slotNumber: true } },
-            user: { select: { name: true } },
+            User: { select: { name: true } },
           },
         }),
         prisma.slotRequest.count({ where }),
@@ -85,20 +85,25 @@ export class SlotRequestController {
       const userId = (req as any).user.id;
       const data = (req as any).body; // Validated by middleware
 
+      // Convert time strings to full datetime objects for today
+      const today = new Date();
+      const startTime = data.startTime ? new Date(`${today.toISOString().split('T')[0]}T${data.startTime}`) : undefined;
+      const endTime = data.endTime ? new Date(`${today.toISOString().split('T')[0]}T${data.endTime}`) : undefined;
+
       const slotRequest = await prisma.slotRequest.create({
         data: {
           userId,
           vehicleId: data.vehicleId,
           preferredLocation: data.preferredLocation,
-          startDate: data.startDate ? new Date(data.startDate) : undefined,
-          endDate: data.endDate ? new Date(data.endDate) : undefined,
+          startTime,
+          endTime,
           notes: data.notes,
           status: RequestStatus.PENDING,
         },
         include: {
           vehicle: { select: { id: true, plateNumber: true, vehicleType: true, size: true } },
           slot: { select: { id: true, slotNumber: true } },
-          user: { select: { name: true } },
+          User: { select: { name: true } },
         },
       });
 
@@ -138,14 +143,14 @@ export class SlotRequestController {
         data: {
           vehicleId: data.vehicleId,
           preferredLocation: data.preferredLocation,
-          startDate: data.startDate ? new Date(data.startDate) : undefined,
-          endDate: data.endDate ? new Date(data.endDate) : undefined,
+          startTime: data.startTime ? new Date(data.startTime) : undefined,
+          endTime: data.endTime ? new Date(data.endTime) : undefined,
           notes: data.notes,
         },
         include: {
           vehicle: { select: { id: true, plateNumber: true, vehicleType: true, size: true } },
           slot: { select: { id: true, slotNumber: true } },
-          user: { select: { name: true } },
+          User: { select: { name: true } },
         },
       });
 
@@ -203,12 +208,16 @@ export class SlotRequestController {
         where: { id: slotRequestId },
         include: {
           vehicle: true,
-          user: true,
+          User: true,
         },
       });
 
       if (!slotRequest || slotRequest.status !== 'PENDING') {
         return ServerResponse.badRequest(res, 'Invalid or non-pending slot request');
+      }
+
+      if (!slotRequest.startTime || !slotRequest.endTime) {
+        return ServerResponse.badRequest(res, 'Start time and end time are required for approval');
       }
 
       // If slotId is not provided, find a compatible slot automatically
@@ -238,12 +247,11 @@ export class SlotRequestController {
         data: {
           status: RequestStatus.APPROVED,
           slotId,
-          slotNumber: slot.slotNumber,
         },
         include: {
           vehicle: true,
           slot: true,
-          user: true,
+          User: true,
         },
       });
 
@@ -254,12 +262,15 @@ export class SlotRequestController {
 
       // Send email notification to user
       try {
-        await sendSlotApprovalEmail(
-          updatedSlotRequest.user.email,
-          slot.slotNumber,
-          updatedSlotRequest.vehicle.plateNumber,
-          new Date()
-        );
+        if (updatedSlotRequest.User?.email) {
+          await sendSlotApprovalEmail(
+            updatedSlotRequest.User.email,
+            updatedSlotRequest.slot?.slotNumber ?? 'Unknown',
+            updatedSlotRequest.vehicle?.plateNumber ?? 'Unknown',
+            updatedSlotRequest.startTime!,
+            updatedSlotRequest.endTime!
+          );
+        }
       } catch (emailError) {
         // Log but do not fail the request if email fails
         console.error('Failed to send slot approval email:', emailError);
@@ -277,11 +288,15 @@ export class SlotRequestController {
         return ServerResponse.forbidden(res, 'Forbidden');
       }
 
-      const { reason } = (req as any).body; // Validated by middleware
+      const { rejectionReason } = (req as any).body; // Validated by middleware
       const slotRequestId = (req as any).params.id;
 
       const slotRequest = await prisma.slotRequest.findUnique({
         where: { id: slotRequestId },
+        include: {
+          vehicle: true,
+          User: true,
+        },
       });
 
       if (!slotRequest || slotRequest.status !== 'PENDING') {
@@ -292,12 +307,12 @@ export class SlotRequestController {
         where: { id: slotRequestId },
         data: {
           status: RequestStatus.REJECTED,
-          rejectionReason: reason,
+          rejectionReason: rejectionReason,
         },
         include: {
           vehicle: { select: { id: true, plateNumber: true, vehicleType: true, size: true } },
           slot: { select: { id: true, slotNumber: true } },
-          user: { select: { name: true } },
+          User: { select: { name: true } },
         },
       });
 

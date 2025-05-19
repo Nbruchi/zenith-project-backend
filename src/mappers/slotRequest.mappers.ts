@@ -8,8 +8,8 @@ export interface FrontendSlotRequest {
   vehiclePlate: string;
   vehicleType: string;
   preferredLocation?: string;
-  startDate: string;
-  endDate: string;
+  startTime?: string;
+  endTime?: string;
   status: 'pending' | 'approved' | 'rejected';
   notes?: string;
   assignedSlot?: {
@@ -23,7 +23,7 @@ export interface FrontendSlotRequest {
 
 export function toFrontendSlotRequest(
   slotRequest: PrismaSlotRequest & {
-    user?: Partial<User> | null;
+    User?: Partial<User> | null;
     vehicle?: Partial<Vehicle> | null;
     slot?: Partial<ParkingSlot> | null;
   }
@@ -31,20 +31,18 @@ export function toFrontendSlotRequest(
   return {
     id: slotRequest.id,
     userId: slotRequest.userId,
-    userName: slotRequest.user?.name ?? 'Unknown',
+    userName: slotRequest.User?.name ?? 'Unknown',
     vehicleId: slotRequest.vehicleId,
     vehiclePlate: slotRequest.vehicle?.plateNumber ?? 'N/A',
     vehicleType: slotRequest.vehicle?.vehicleType ?? 'N/A',
     preferredLocation: slotRequest.preferredLocation ?? undefined,
-    startDate: slotRequest.startDate?.toISOString() ?? '',
-    endDate: slotRequest.endDate?.toISOString() ?? '',
+    startTime: slotRequest.startTime?.toISOString(),
+    endTime: slotRequest.endTime?.toISOString(),
     status: slotRequest.status.toLowerCase() as 'pending' | 'approved' | 'rejected',
     notes: slotRequest.notes ?? undefined,
-    // assignedSlot: slotRequest.slotId && slotRequest.slotNumber
-    //   ? { id: slotRequest.slotId, slotNumber: slotRequest.slotNumber }
-    //   : slotRequest.slot
-    //     ? { id: slotRequest.slot.id, slotNumber: slotRequest.slot.slotNumber }
-    //     : undefined,
+    assignedSlot: slotRequest.slot?.id && slotRequest.slot?.slotNumber
+      ? { id: slotRequest.slot.id, slotNumber: slotRequest.slot.slotNumber }
+      : undefined,
     rejectionReason: slotRequest.rejectionReason ?? undefined,
     createdAt: slotRequest.createdAt.toISOString(),
     updatedAt: slotRequest.updatedAt.toISOString(),
