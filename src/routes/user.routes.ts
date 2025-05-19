@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { UserController } from 'controllers/user.controllers';
-import { validationMiddleware } from '../middlewares/validator.middleware';
-import { UpdateProfileDto, UpdatePasswordDto } from '../dtos/auth.dto';
-import { checkLoggedIn, checkAdmin } from '../middlewares/auth.middleware';
+import { validationMiddleware } from 'middlewares/validator.middleware';
+import { UpdateProfileDto, UpdatePasswordDto } from 'dtos/auth.dto';
+import { checkLoggedIn, checkAdmin } from 'middlewares/auth.middleware';
 import { asyncHandler } from 'middlewares/asyncHandler.middleware';
 const router = Router();
 

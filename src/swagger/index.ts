@@ -6,7 +6,7 @@ const doc = {
         title: 'NE NodeJS Rest API',
         description: ''
     },
-    host: 'localhost:8090',
+    host: 'http://localhost:8000',
     basePath: '/api/v1',
     schemes: ['http'],
     consumes: ['application/json'],
@@ -31,7 +31,7 @@ const doc = {
     definitions: {}
 };
 
-const outputFile = './src/swagger/doc/swagger.json';
+const outputFile = './doc/swagger.json';
 const routes = ['./src/routes/index.ts'];
 
 swaggerAutogen()(outputFile, routes, doc).then(async () => {

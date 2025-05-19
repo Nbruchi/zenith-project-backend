@@ -1,10 +1,10 @@
 {
-  "name": "server",
+  "name": "backend",
   "version": "1.0.0",
   "main": "./src/app.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "nodemon ./src/app.ts"
+    "swagger": "ts-node ./src/swagger/index.ts",
+    "start": "nodemon ./src/app.ts"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +26,7 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
-    "@prisma/client": "^6.8.1",
+    "@prisma/client": "^6.8.2",
     "@types/bcrypt": "^5.0.2",
     "@types/body-parser": "^1.19.5",
     "@types/cors": "^2.8.18",
@@ -37,7 +37,7 @@
     "@types/swagger-ui-express": "^4.1.8",
     "nodemailer": "^7.0.3",
     "nodemon": "^3.1.10",
-    "prisma": "^6.8.0",
+    "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { validationMiddleware } from '../middlewares/validator.middleware';
-import { BulkSlotDto, CreateSlotDto, SlotDto, UpdateSlotDto } from '../dtos/parking.dto';
-import { checkLoggedIn, checkAdmin } from '../middlewares/auth.middleware';
+import { validationMiddleware } from 'middlewares/validator.middleware';
+import { BulkSlotDto, CreateSlotDto, SlotDto, UpdateSlotDto } from 'dtos/parking.dto';
+import { checkLoggedIn, checkAdmin } from 'middlewares/auth.middleware';
 import { ParkingSlotController } from 'controllers/parking.controllers';
 import { asyncHandler } from 'middlewares/asyncHandler.middleware';
 const router = Router();

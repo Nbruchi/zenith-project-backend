@@ -5,6 +5,7 @@ import { PrismaClient, SlotRequest, RequestStatus } from '@prisma/client';
 import { toFrontendSlotRequest, FrontendSlotRequest } from '../mappers/slotRequest.mappers';
 import { GetSlotRequestsQueryDto } from '../dtos/parking.dto';
 import ServerResponse from '../utils/ServerResponse';
+import { sendSlotApprovalEmail } from '../utils/mail';
 
 const prisma = new PrismaClient();
 
@@ -194,25 +195,44 @@ export class SlotRequestController {
         return ServerResponse.forbidden(res, 'Forbidden');
       }
 
-      const { slotId } = (req as any).body; // Validated by middleware
+      let { slotId } = (req as any).body; // Validated by middleware
       const slotRequestId = (req as any).params.id;
 
-      const slot = await prisma.parkingSlot.findUnique({
-        where: { id: slotId },
-      });
-
-      if (!slot || slot.status !== 'AVAILABLE') {
-        return ServerResponse.badRequest(res, 'Invalid or unavailable slot');
-      }
-
+      // Fetch the slot request with vehicle and user info
       const slotRequest = await prisma.slotRequest.findUnique({
         where: { id: slotRequestId },
+        include: {
+          vehicle: true,
+          user: true,
+        },
       });
 
       if (!slotRequest || slotRequest.status !== 'PENDING') {
         return ServerResponse.badRequest(res, 'Invalid or non-pending slot request');
       }
 
+      // If slotId is not provided, find a compatible slot automatically
+      let slot;
+      if (!slotId) {
+        slot = await prisma.parkingSlot.findFirst({
+          where: {
+            status: 'AVAILABLE',
+            vehicleType: slotRequest.vehicle.vehicleType,
+            size: slotRequest.vehicle.size,
+          },
+        });
+        if (!slot) {
+          return ServerResponse.badRequest(res, 'No compatible available slot found');
+        }
+        slotId = slot.id;
+      } else {
+        slot = await prisma.parkingSlot.findUnique({ where: { id: slotId } });
+        if (!slot || slot.status !== 'AVAILABLE') {
+          return ServerResponse.badRequest(res, 'Invalid or unavailable slot');
+        }
+      }
+
+      // Approve the slot request
       const updatedSlotRequest = await prisma.slotRequest.update({
         where: { id: slotRequestId },
         data: {
@@ -221,16 +241,29 @@ export class SlotRequestController {
           slotNumber: slot.slotNumber,
         },
         include: {
-          vehicle: { select: { id: true, plateNumber: true, vehicleType: true, size: true } },
-          slot: { select: { id: true, slotNumber: true } },
-          user: { select: { name: true } },
+          vehicle: true,
+          slot: true,
+          user: true,
         },
       });
 
       await prisma.parkingSlot.update({
         where: { id: slotId },
-        data: { status: 'UNAVAILABLE' },
+        data: { status: 'OCCUPIED' },
       });
+
+      // Send email notification to user
+      try {
+        await sendSlotApprovalEmail(
+          updatedSlotRequest.user.email,
+          slot.slotNumber,
+          updatedSlotRequest.vehicle.plateNumber,
+          new Date()
+        );
+      } catch (emailError) {
+        // Log but do not fail the request if email fails
+        console.error('Failed to send slot approval email:', emailError);
+      }
 
       return ServerResponse.success(res, toFrontendSlotRequest(updatedSlotRequest));
     } catch (error: any) {

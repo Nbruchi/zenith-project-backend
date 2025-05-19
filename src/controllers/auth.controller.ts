@@ -8,7 +8,7 @@ import { logAction } from '../prisma/prisma-client';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
-    const { name, email, password, role } = req.body as RegisterDto;
+    const { name, email, password } = req.body as RegisterDto;
     try {
       const userExists = await prisma.user.findUnique({ where: { email } })
       if (userExists) {
@@ -22,7 +22,7 @@ export class AuthController {
       }
 
       const user = await prisma.user.create({
-        data: { name, email, password: hashedPassword, role },
+        data: { name, email, password: hashedPassword, role: 'USER' },
       });
 
       const token = jwt.sign({ id: user.id , role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '1d' });
@@ -40,7 +40,8 @@ export class AuthController {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return ServerResponse.unauthorized(res, 'Invalid credentials');
     }
-    const token = jwt.sign({ id: user.id , role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '1d' });
+
+    const token = jwt.sign({ id: user.id , role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '7d'});
     await logAction(user.id, 'User logged in');
     return ServerResponse.success(res, { user: { id: user.id, name: user.name, email, role: user.role }, token });
   }
@@ -52,7 +53,4 @@ export class AuthController {
     }
     return ServerResponse.success(res, { id: user.id, name: user.name, email: user.email, role: user.role });
   }
-
-
-  
 }

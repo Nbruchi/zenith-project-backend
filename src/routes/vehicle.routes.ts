@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { VehicleController } from '../controllers/vehicle.controllers';
-import { validationMiddleware } from '../middlewares/validator.middleware';
-import { VehicleDto, UpdateVehicleDto } from '../dtos/vehicle.dto';
-import { checkLoggedIn } from '../middlewares/auth.middleware';
+import { VehicleController } from 'controllers/vehicle.controllers';
+import { validationMiddleware } from 'middlewares/validator.middleware';
+import { VehicleDto, UpdateVehicleDto } from 'dtos/vehicle.dto';
+import { checkLoggedIn } from 'middlewares/auth.middleware';
 import { asyncHandler } from 'middlewares/asyncHandler.middleware';
 const vehicleRoute = Router();
 

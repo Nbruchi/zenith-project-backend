@@ -6,7 +6,7 @@ export class VehicleDto {
   @IsString()
   @IsNotEmpty()
   @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
-  @Matches(/^RA[A-G][0-9]{3}[A-Z]$/, {
+  @Matches(/^RA[A-Z][0-9]{3}[A-Z]$/, {
     message: 'Plate number must follow the format RA[A-G][0-9]{3}[A-Z], e.g., RAH123U',
   })
   plateNumber!: string;
