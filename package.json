@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "./src/app.ts",
   "scripts": {
-    "swagger": "ts-node ./src/swagger/index.ts",
+    "swagger": "ts-node ./src/swagger/swagger.ts",
     "start": "nodemon ./src/app.ts"
   },
   "keywords": [],
@@ -21,8 +21,6 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "reflect-metadata": "^0.2.2",
-    "swagger-autogen": "^2.23.7",
-    "swagger-ui-express": "^5.0.1",
     "zod": "^3.24.4"
   },
   "devDependencies": {
@@ -34,7 +32,6 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.18",
     "@types/nodemailer": "^6.4.17",
-    "@types/swagger-ui-express": "^4.1.8",
     "nodemailer": "^7.0.3",
     "nodemon": "^3.1.10",
     "prisma": "^6.8.2",
