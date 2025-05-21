@@ -24,6 +24,13 @@ export enum SlotStatus {
     RESERVED = "RESERVED",
 }
 
+export enum Location {
+    NORTH = "NORTH",
+    SOUTH = "SOUTH",
+    EAST = "EAST",
+    WEST = "WEST",
+}
+
 @ValidatorConstraint({ name: "DateRangeValidator", async: false })
 class DateRangeValidator implements ValidatorConstraintInterface {
     validate(value: string, args: ValidationArguments): boolean {
