@@ -76,12 +76,9 @@ export class LoginDto {
  *     UpdateProfileDto:
  *       type: object
  *       properties:
- *         firstName:
+ *         name:
  *           type: string
- *           description: User's first name
- *         lastName:
- *           type: string
- *           description: User's last name
+ *           description: User's full name
  *         email:
  *           type: string
  *           format: email
@@ -89,20 +86,12 @@ export class LoginDto {
  */
 export class UpdateProfileDto {
     @IsString()
-    @IsNotEmpty()
-    name?: string; // Already optional, no change needed
+    @IsOptional()
+    name?: string;
 
     @IsEmail()
     @IsOptional()
-    email?: string; // Already optional
-
-    @IsString()
-    @IsOptional()
-    firstName?: string;
-
-    @IsString()
-    @IsOptional()
-    lastName?: string;
+    email?: string;
 }
 
 /**
