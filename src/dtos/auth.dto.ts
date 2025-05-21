@@ -15,8 +15,7 @@ import {
  *       required:
  *         - email
  *         - password
- *         - firstName
- *         - lastName
+ *         - name
  *       properties:
  *         email:
  *           type: string
@@ -26,24 +25,21 @@ import {
  *           type: string
  *           minLength: 6
  *           description: User's password (minimum 6 characters)
- *         firstName:
+ *         name:
  *           type: string
- *           description: User's first name
- *         lastName:
- *           type: string
- *           description: User's last name
+ *           description: User's full name
  */
 export class RegisterDto {
     @IsString()
     @IsNotEmpty()
-    name!: string; // Add ! to assert definite assignment
+    name!: string;
 
     @IsEmail()
-    email!: string; // Add !
+    email!: string;
 
     @IsString()
     @MinLength(6)
-    password!: string; // Add !
+    password!: string;
 }
 
 /**
